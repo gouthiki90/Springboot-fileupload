@@ -1,8 +1,8 @@
 package site.metacoding.dbproject.domain.user;
 
+
 import java.time.LocalDateTime;
 
-import javax.annotation.Generated;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
@@ -16,7 +16,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 // JPA 라이브러리는 Java Persistence(영구적인) API(노출되어 있는 메서드)이라고 한다. 

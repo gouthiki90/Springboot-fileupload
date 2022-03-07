@@ -1,9 +1,12 @@
 package site.metacoding.dbproject.web;
 
+import java.util.Optional;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,15 +19,17 @@ import site.metacoding.dbproject.domain.user.UserRepository;
 public class UserController {
 
     private UserRepository userRepository;
+    private HttpSession session; // 사용자와 공유해서 사용함
 
     // DI 받는 코드
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, HttpSession session) {
         this.userRepository = userRepository;
+        this.session = session;
     }
 
     // 회원가입 페이지(정적) - 누구나 들어갈 수 있음, 로그인X
     @GetMapping("/joinForm")
-    public String joinForm() {
+    public String joinForm() { // 요청할 때마다 스택 생성
         return "user/joinForm";
     }
 
@@ -51,10 +56,11 @@ public class UserController {
     @PostMapping("/login") // user 안 적음
     public String login(HttpServletRequest request, User user) {
         HttpSession session = request.getSession(); // 세션 영역에 접근 sessionId : 85
-
         // 1. DB 연결해서 username, password있는 지 확인
         User userEntity = userRepository.mLogin(user.getUsername(), user.getPassword());
+        
         System.out.println("사용자로 받은 username과 패스워드" + user);
+
         if (userEntity == null) { // 검증
             System.out.println("아이디 혹은 패스워드가 틀렸습니다.");
             System.out.println(userEntity);
@@ -66,11 +72,37 @@ public class UserController {
         return "redirect:/"; // PostController 만들고 수정하기
     }
 
+    //http://localhost:8080/user/1
     // 유저 정보 페이지, 동적 페이지이기 때문에 id로 검색
     // 로그인 O
     @GetMapping("/user/{id}")
-    public String detail(@PathVariable int id) {
-        return "user/detail"; // 리턴값 상대경로
+    public String detail(@PathVariable int id, Model model) {
+        // 유효성 검사하기
+        User principal = (User) session.getAttribute("principal");
+
+        // 인증 체크하기
+        if(principal == null){
+            return "erro/page1";
+        }
+        
+        // 다른 사용자 정보를 볼 수 없도록 권한 주기
+        if(principal.getId() != id){ // 본인 id가 id와 맞지 않으면
+            return "erro/page1";
+        }
+
+        Optional<User> userOp = userRepository.findById(id); // 유저 정보 DB 데이터 찾기
+        // DB에서 들고온 것이기 때문에 entity로 변수 적는다.
+       
+        if(userOp.isPresent()){ // data가 있으면
+            User userEntity = userOp.get();
+            model.addAttribute("user", userEntity); // 모델에다 담기
+
+            return "user/detail"; // 리턴값 상대경로
+        } else {
+            return "erro/page1";
+        }
+
+        //DB에 로그 남기기, 부가적인 로직
     }
 
     // 유저 수정 페이지
