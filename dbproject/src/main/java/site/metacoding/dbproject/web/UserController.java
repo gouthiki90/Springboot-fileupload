@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import site.metacoding.dbproject.domain.user.User;
 import site.metacoding.dbproject.domain.user.UserRepository;
@@ -36,11 +37,21 @@ public class UserController {
     // useranme=ssar$password=1234&email=ssar@nate.com (x-www-form)
     // 회원가입 액션 - 로그인X
     @PostMapping("/join") // 인증이 필요한 것이기 때문에 테이블명 안 적음
-    public String join(User user) { // user오브젝트에 있는 필드를 사용할 수 있다.
-        System.out.println("user : " + user);
-        User userEntity = userRepository.save(user); // post로 데이터 들어왔을 때 필드 찾고 직접 넣어줌
-        System.out.println("userEntity" + userEntity);
-        return "redirect:/loginForm"; // 로그인 페이지로 이동해주는 컨트롤러 메서드를 재활용
+    public @ResponseBody String join(User user) { // user오브젝트에 있는 필드를 사용할 수 있다.
+        // 데이터를 리턴하도록 함, RestController가 됨
+
+        //1. username, password, email null 체크하기
+        if(user.getUsername() == null || user.getPassword() == null || user.getEmail() == null){
+            return "redirect:/joinForm"; // 다시 다운 받게 돼서 뒤로 가기가 안 된다.
+            // 이를 브라우저가 해석하도록 문자열 버퍼로 날려줌
+        }
+        if(user.getUsername().equals("") || user.getPassword().equals("") || user.getEmail().equals("")){
+            return "redirect:/joinForm";
+        } 
+            // System.out.println("user : " + user);
+            User userEntity = userRepository.save(user); // post로 데이터 들어왔을 때 필드 찾고 직접 넣어줌
+            // System.out.println("userEntity" + userEntity);
+        return "/loginForm";
     }
 
     // 로그인 페이지(정적) - 로그인X
