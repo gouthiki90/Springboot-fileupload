@@ -41,7 +41,7 @@ public class Post {
 
     @JoinColumn(name = "userId")
     @ManyToOne // userId로 만들어줌
-    private User user;
+    private User user; // 세션에 있으니 로그인 하면 불러옴
 
     @CreatedDate // INSERT
     private LocalDateTime createDate; // INSERT 될 때 들어간 날짜 들어감
