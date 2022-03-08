@@ -11,44 +11,49 @@ import org.springframework.web.bind.annotation.PutMapping;
 public class PostController {
 
     // 글쓰기 페이지 /post/writeForm
-    @GetMapping("/post/writeForm")
+    @GetMapping("/s/post/writeForm") // 인증이 필요함
     public String writeForm() {
         return "post/writeForm";
     }
 
     // 메인페이지라서 주소를 2개 건다. 둘 다 가능하다는 것.
     // 글목록 페이지 /post/list, /
-    @GetMapping({ "/", "/post/list" })
+    @GetMapping({ "/", "/post/list"}) // 인증이 필요없게끔 한다.
     public String list() {
         return "post/list";
     }
 
     // 글 상세보기 페이지 /post/{id} (삭제버튼, 수정버튼)
-    @GetMapping("/post/{id}")
+    // Get 요청에 /post 제외 시키기, 인증이 필요없기 때문
+    @GetMapping("/post/{id}") // 모든 사람이 글을 읽을 수 있도록 인증 없이 한다.
     public String detail(@PathVariable Integer id) {
         return "post/{id}";
     }
 
     // 글 수정 페이지 /post/{id}/updateForm
-    @GetMapping("/post/{id}/updateForm")
+    // 인증 반드시 필요함
+    @GetMapping("/s/post/{id}/updateForm")
     public String updateForm(@PathVariable Integer id) {
         return "post/{id}/updateForm"; // viewResolver 도움을 받는다.
     }
 
     // 글 삭제 /post
-    @DeleteMapping("/post/{id}")
+    // 인증 필요함
+    @DeleteMapping("/s/post/{id}")
     public String delete(@PathVariable Integer id) {
         return "redirect:/";
     }
 
     // 글 수정 /post{id}
-    @PutMapping("/post/{id}")
+    // 인증 필요함
+    @PutMapping("/s/post/{id}")
     public String update(@PathVariable Integer id) {
         return "redirect:post/" + id; // 글 상세보기
     }
 
     // 글 쓰기 /post
-    @PostMapping("/post")
+    // 인증 필요함
+    @PostMapping("/s/post")
     public String write(String title, String content) {
         return "redirect:/";
     }

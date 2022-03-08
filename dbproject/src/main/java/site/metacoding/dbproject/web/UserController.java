@@ -2,7 +2,9 @@ package site.metacoding.dbproject.web;
 
 import java.util.Optional;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
@@ -40,23 +42,33 @@ public class UserController {
     public @ResponseBody String join(User user) { // user오브젝트에 있는 필드를 사용할 수 있다.
         // 데이터를 리턴하도록 함, RestController가 됨
 
-        //1. username, password, email null 체크하기
-        if(user.getUsername() == null || user.getPassword() == null || user.getEmail() == null){
+        // 1. username, password, email null 체크하기
+        if (user.getUsername() == null || user.getPassword() == null || user.getEmail() == null) {
             return "redirect:/joinForm"; // 다시 다운 받게 돼서 뒤로 가기가 안 된다.
             // 이를 브라우저가 해석하도록 문자열 버퍼로 날려줌
         }
-        if(user.getUsername().equals("") || user.getPassword().equals("") || user.getEmail().equals("")){
+        if (user.getUsername().equals("") || user.getPassword().equals("") || user.getEmail().equals("")) {
             return "redirect:/joinForm";
-        } 
-            // System.out.println("user : " + user);
-            User userEntity = userRepository.save(user); // post로 데이터 들어왔을 때 필드 찾고 직접 넣어줌
-            // System.out.println("userEntity" + userEntity);
+        }
+        // System.out.println("user : " + user);
+        User userEntity = userRepository.save(user); // post로 데이터 들어왔을 때 필드 찾고 직접 넣어줌
+        // System.out.println("userEntity" + userEntity);
         return "/loginForm";
     }
 
     // 로그인 페이지(정적) - 로그인X
     @GetMapping("/loginForm")
-    public String loginForm() {
+    public String loginForm(HttpServletRequest request, Model model) {
+        // request.getHeader("Cookie");
+        Cookie[] cookies = request.getCookies(); // 배열 타입으로 리턴해줌
+        // Jsession, remember 두 개가 있음
+        if (request.getCookies() != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("remember")) // remember가 있으면 값을 부른다.
+                    model.addAttribute("remember", cookie.getValue());
+                // 쿠키 자동 전송
+            }
+        }
         return "user/loginForm";
     }
 
@@ -65,11 +77,11 @@ public class UserController {
     // 주소에 패스워드를 남길 수 없기 때문이다.
     // 로그인X
     @PostMapping("/login") // user 안 적음
-    public String login(HttpServletRequest request, User user) {
+    public String login(HttpServletRequest request, User user, HttpServletResponse response) {
         HttpSession session = request.getSession(); // 세션 영역에 접근 sessionId : 85
         // 1. DB 연결해서 username, password있는 지 확인
         User userEntity = userRepository.mLogin(user.getUsername(), user.getPassword());
-        
+
         System.out.println("사용자로 받은 username과 패스워드" + user);
 
         if (userEntity == null) { // 검증
@@ -78,33 +90,49 @@ public class UserController {
         } else {
             System.out.println("로그인 되었습니다.");
             session.setAttribute("principal", userEntity); // 세션 영역에 세션 저장
+
+            if (user.getRemember() != null && user.getRemember().equals("on")) {
+                // 리스펀스 쿠키에다 담아준다.
+                response.setHeader("Set-Cookie", "remember=" + userEntity.getUsername()); // 쿠키에 유저네임 저장하기
+                // response.addHeader(name, value); 여러개 쿠키 기입 가능
+                // response.addCookie(cookie); 쓰지 말기
+            }
         }
         // 2. 있으면 session 영역에 인증됨이라고 메시지 하나 넣기
         return "redirect:/"; // PostController 만들고 수정하기
     }
 
-    //http://localhost:8080/user/1
+    // 로그아웃
+    // 로그인O
+    @GetMapping("/logout")
+    public String logout() {
+        session.invalidate(); // 로그인 세션 전부 날린다.
+        // session.removeAttribute("principal"); 해당 Jsession 영역의 키값만 날아간다.
+        return "redirect:/loginForm"; // PostController 만들고 수정하기
+    }
+
+    // http://localhost:8080/user/1
     // 유저 정보 페이지, 동적 페이지이기 때문에 id로 검색
     // 로그인 O
-    @GetMapping("/user/{id}")
+    @GetMapping("/s/user/{id}")
     public String detail(@PathVariable int id, Model model) {
         // 유효성 검사하기
         User principal = (User) session.getAttribute("principal");
 
         // 인증 체크하기
-        if(principal == null){
+        if (principal == null) {
             return "erro/page1";
         }
-        
+
         // 다른 사용자 정보를 볼 수 없도록 권한 주기
-        if(principal.getId() != id){ // 본인 id가 id와 맞지 않으면
+        if (principal.getId() != id) { // 본인 id가 id와 맞지 않으면
             return "erro/page1";
         }
 
         Optional<User> userOp = userRepository.findById(id); // 유저 정보 DB 데이터 찾기
         // DB에서 들고온 것이기 때문에 entity로 변수 적는다.
-       
-        if(userOp.isPresent()){ // data가 있으면
+
+        if (userOp.isPresent()) { // data가 있으면
             User userEntity = userOp.get();
             model.addAttribute("user", userEntity); // 모델에다 담기
 
@@ -113,27 +141,21 @@ public class UserController {
             return "erro/page1";
         }
 
-        //DB에 로그 남기기, 부가적인 로직
+        // DB에 로그 남기기, 부가적인 로직
     }
 
     // 유저 수정 페이지
     // 로그인 O
-    @GetMapping("/user/{id}/updateForm")
-    public String updateForm(@PathVariable int id) {
+    @GetMapping("/s/user/updateForm")
+    public String updateForm(Model model) {
         return "user/updateForm"; // 리턴값 상대경로
     }
 
     // 유저수정을 수행
     // 로그인O
-    @PutMapping("/user/{id}")
+    @PutMapping("/s/user/{id}")
     public String update(@PathVariable int id) {
-        return "redirect:/userInfo" + id;
+        return "redirect:/user/" + id;
     }
 
-    // 로그아웃
-    // 로그인O
-    @GetMapping("/logout")
-    public String logout() {
-        return "메인페이지를 돌려주면 됨"; // PostController 만들고 수정하기
-    }
 }
