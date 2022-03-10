@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -40,7 +41,7 @@ public class Post {
     private String content;
 
     @JoinColumn(name = "userId")
-    @ManyToOne // userId로 만들어줌
+    @ManyToOne(fetch = FetchType.EAGER) // userId로 만들어줌
     private User user; // 세션에 있으니 로그인 하면 불러옴
 
     @CreatedDate // INSERT

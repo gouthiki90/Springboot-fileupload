@@ -49,9 +49,9 @@ public class PostController {
     public String detail(@PathVariable Integer id, Model model) {
         Optional<Post> postOp = repository.findById(id);
       
-        if (postOp.isPresent()) {
-            Post postEntity = postOp.get();
-            model.addAttribute("post", postEntity);
+        if (postOp.isPresent()) { // null이 아니면
+            Post postEntity = postOp.get(); // entity에 postOp 담기
+            model.addAttribute("post", postEntity); // 모델에 담기
             return "post/detail";
         } else {
             return "error/page1";
