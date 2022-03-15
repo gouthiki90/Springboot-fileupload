@@ -4,7 +4,8 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpSession;
 
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import lombok.RequiredArgsConstructor;
 import site.metacoding.dbproject.domain.post.Post;
@@ -37,12 +40,28 @@ public class PostController {
     // 메인페이지라서 주소를 2개 건다. 둘 다 가능하다는 것.
     // 글목록 페이지 /post/list, /
     @GetMapping({ "/", "/post/list/{{id}}"}) // 인증이 필요없게끔 한다.
-    public String list(Model model) {
+    public String list(@RequestParam(defaultValue = "0") Integer page, Model model) {
         //1.postRepository의 findAll() 호출
-        model.addAttribute("posts", repository.findAll(Sort.by(Sort.Direction.DESC, "id"))); // id를 거꾸로 index를 읽는다.
-        //2. 모델에 담기
+        //model.addAttribute("posts", repository.findAll(Sort.by(Sort.Direction.DESC, "id"))); id를 거꾸로 index를 읽는다.
+
+        PageRequest pq = PageRequest.of(page, 3); // 페이지를 원래 계산해야 되는데 시작 번호를 알아서 찾아준다.
+        model.addAttribute("posts", repository.findAll(pq)); //id를 거꾸로 index를 읽는다.
+
+        model.addAttribute("nextPage", page+1); // 페이지를 모델에 담아서 뷰에 적용한다. 페이지 값을.
+        model.addAttribute("prevPage", page-1); // 이전으로 가는 페이지 -1
         return "post/list";
     }
+
+    // @GetMapping("/test/post/list")
+    // public @ResponseBody Page<Post> listTest(@RequestParam(defaultValue = "0") Integer page){ Integer는 null이 있음
+
+    //      if(page == null){ 변수 초기화로 디폴트값 적용 가능
+    //          page = 0;
+    //      }
+
+    //     PageRequest pq = PageRequest.of(page, 3);
+    //     return repository.findAll(pq);
+    // }
 
     // 글 상세보기 페이지 /post/{id} (삭제버튼, 수정버튼)
     // Get 요청에 /post 제외 시키기, 인증이 필요없기 때문

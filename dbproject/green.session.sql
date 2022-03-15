@@ -14,3 +14,5 @@ SELECT * FROM board ORDER BY id DESC; -- 거꾸로 orderby하기
 
 SELECT /*+ INDEX_DESC(user PRIMARY) */ id -- 힌트 줘서 거꾸로 orderby하기 index사용
 FROM User;
+
+SELECT * FROM Post LIMIT 0, 3; -- 3개씩 페이징
