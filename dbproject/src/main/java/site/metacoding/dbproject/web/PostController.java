@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpSession;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,7 +39,7 @@ public class PostController {
     @GetMapping({ "/", "/post/list/{{id}}"}) // 인증이 필요없게끔 한다.
     public String list(Model model) {
         //1.postRepository의 findAll() 호출
-        model.addAttribute("posts", repository.findAll());
+        model.addAttribute("posts", repository.findAll(Sort.by(Sort.Direction.DESC, "id"))); // id를 거꾸로 index를 읽는다.
         //2. 모델에 담기
         return "post/list";
     }
@@ -52,6 +53,7 @@ public class PostController {
         if (postOp.isPresent()) { // null이 아니면
             Post postEntity = postOp.get(); // entity에 postOp 담기
             model.addAttribute("post", postEntity); // 모델에 담기
+            System.out.println("===========================");
             return "post/detail";
         } else {
             return "error/page1";
