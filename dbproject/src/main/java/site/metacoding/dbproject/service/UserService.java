@@ -3,9 +3,9 @@ package site.metacoding.dbproject.service;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import site.metacoding.dbproject.domain.study.responseObject;
 import site.metacoding.dbproject.domain.user.User;
 import site.metacoding.dbproject.domain.user.UserRepository;
 
@@ -29,6 +29,7 @@ public class UserService { // 레파지토리에 의존함
         }
     }
     
+    @Transactional
     public void 회원가입(User user){ // joinForm
         userRepository.save(user); // 응답 안 해줘도 되고 실행만 해주면 됨
     }
@@ -37,6 +38,7 @@ public class UserService { // 레파지토리에 의존함
         return userRepository.mLogin(user.getUsername(), user.getPassword());
     }
 
+    
     public User 유저정보보기(Integer id){ // detail
         Optional<User> userOp = userRepository.findById(id); // 유저 정보 DB 데이터 찾기
 
@@ -50,6 +52,7 @@ public class UserService { // 레파지토리에 의존함
         }
     }
 
+    @Transactional
     public void 유저수정(Integer id, User user){
 
         //1. 영속화

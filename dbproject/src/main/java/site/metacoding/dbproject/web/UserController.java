@@ -32,8 +32,6 @@ public class UserController {
     private final UserService userService; // 의존성 주입
     private final HttpSession session; // 사용자와 공유해서 사용함
 
-    private final UserRepository userRepository; // 좀 있다 지우기
-
     // http://localhost:8080/api/user/username/same-check?username=s
     // user의 username이 동일한지 확인 - 응답은 json으로 한다.
     @GetMapping("/api/user/username/same-check") // 데이터를 주는 컨트롤러이다.
@@ -175,24 +173,24 @@ public class UserController {
     // 유저수정을 수행
     // 로그인O
     @PutMapping("/s/user/{id}")
-    public String update(@PathVariable Integer id, @RequestBody User user) { // password와 email을 오브젝트로 받음
-
+    public @ResponseBody ResponseDto<String> update(@PathVariable Integer id, @RequestBody User user) { // password와 email을 오브젝트로 받음
+        // 자바스크립트와 연결하기 때문에 데이터로 리턴해줘야 됨
         User principal = (User) session.getAttribute("principal");
 
         // 인증 체크하기
         if (principal == null) {
-            return "erro/page1";
+            return new ResponseDto<String>(-1, "인증 안됨", null);
         }
 
         // 다른 사용자 정보를 볼 수 없도록 권한 주기
         if (principal.getId() != id) { // 본인 id가 id와 맞지 않으면
-            return "erro/page1";
+            return new ResponseDto<String>(-1, "권한 없음", null);
         }
 
         // User userEntity = userService.유저수정(id, user);
         // session.set("principal", userEntity); 세션 변경, 덮어씌우기
 
-        return "redirect:/s/user/" + id;
+        return new ResponseDto<String>(1, "성공", null);
     }
 
 }
