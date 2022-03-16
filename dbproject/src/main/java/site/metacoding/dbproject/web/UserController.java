@@ -9,26 +9,53 @@ import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestTemplate;
 
+import lombok.RequiredArgsConstructor;
+import site.metacoding.dbproject.domain.study.responseObject;
 import site.metacoding.dbproject.domain.user.User;
 import site.metacoding.dbproject.domain.user.UserRepository;
+import site.metacoding.dbproject.service.UserService;
+import site.metacoding.dbproject.web.dto.ResponseDto;
 
+@RequiredArgsConstructor
 @Controller
 public class UserController {
 
-    private UserRepository userRepository;
-    private HttpSession session; // 사용자와 공유해서 사용함
+    private final UserService userService; // 의존성 주입
+    private final HttpSession session; // 사용자와 공유해서 사용함
 
-    // DI 받는 코드
-    public UserController(UserRepository userRepository, HttpSession session) {
-        this.userRepository = userRepository;
-        this.session = session;
+    private final UserRepository userRepository; // 좀 있다 지우기
+
+    // http://localhost:8080/api/user/username/same-check?username=s
+    // user의 username이 동일한지 확인 - 응답은 json으로 한다.
+    @GetMapping("/api/user/username/same-check") // 데이터를 주는 컨트롤러이다.
+    public @ResponseBody ResponseDto<String> sameCheck(String username){
+
+        String result = userService.유저네임중복검사(username);
+
+        return new ResponseDto<String>(1, "통신 성공", result);
     }
+
+    @CrossOrigin
+    @GetMapping("/gonggongdata")
+    public String test(){
+        RestTemplate rt = new RestTemplate();
+        String response = rt.getForObject("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?serviceKey=eCazEq%2FCP4iBdrQDcQQrLr3rgUrV%2ByZOFRdwxGTrcfeZbe3FqDvkQ6iMAWgeXRDOa%2FABNLYI3Dhz7hzxyUuI4A%3D%3D&pageNo=1&numOfRows=1000&dataType=json&base_date=20220315&base_time=0600&nx=55&ny=127", String.class);
+        // 파싱 안 하고 문자열로 받기
+
+        System.out.println(response);
+
+        return response.toString();
+    }
+
 
     // 회원가입 페이지(정적) - 누구나 들어갈 수 있음, 로그인X
     @GetMapping("/joinForm")
@@ -50,9 +77,9 @@ public class UserController {
         if (user.getUsername().equals("") || user.getPassword().equals("") || user.getEmail().equals("")) {
             return "redirect:/joinForm";
         }
-        // System.out.println("user : " + user);
-        User userEntity = userRepository.save(user); // post로 데이터 들어왔을 때 필드 찾고 직접 넣어줌
-        // System.out.println("userEntity" + userEntity);
+
+        userService.회원가입(user);
+
         return "/loginForm";
     }
 
@@ -80,16 +107,10 @@ public class UserController {
     public String login(HttpServletRequest request, User user, HttpServletResponse response) {
         HttpSession session = request.getSession(); // 세션 영역에 접근 sessionId : 85
         // 1. DB 연결해서 username, password있는 지 확인
-        User userEntity = userRepository.mLogin(user.getUsername(), user.getPassword());
+        User userEntity = userService.로그인(user);
 
-        System.out.println("사용자로 받은 username과 패스워드" + user);
-
-        if (userEntity == null) { // 검증
-            System.out.println("아이디 혹은 패스워드가 틀렸습니다.");
-            System.out.println(userEntity);
-        } else {
-            System.out.println("로그인 되었습니다.");
-            session.setAttribute("principal", userEntity); // 세션 영역에 세션 저장
+        if(userEntity != null){ // 로그인 됐을 때
+            session.setAttribute("principal", userEntity); // 세션 넣기
 
             if (user.getRemember() != null && user.getRemember().equals("on")) {
                 // 리스펀스 쿠키에다 담아준다.
@@ -97,9 +118,11 @@ public class UserController {
                 // response.addHeader(name, value); 여러개 쿠키 기입 가능
                 // response.addCookie(cookie); 쓰지 말기
             }
+            return "redirect:/"; // 메인 페이지로 가기
+        } else { // 로그인 안 됐을 때
+            return "redirect:/loginForm";
         }
-        // 2. 있으면 session 영역에 인증됨이라고 메시지 하나 넣기
-        return "redirect:/"; // PostController 만들고 수정하기
+        
     }
 
     // 로그아웃
@@ -129,33 +152,47 @@ public class UserController {
             return "erro/page1";
         }
 
-        Optional<User> userOp = userRepository.findById(id); // 유저 정보 DB 데이터 찾기
-        // DB에서 들고온 것이기 때문에 entity로 변수 적는다.
+        User userEntity = userService.유저정보보기(id);
 
-        if (userOp.isPresent()) { // data가 있으면
-            User userEntity = userOp.get();
-            model.addAttribute("user", userEntity); // 모델에다 담기
-
-            return "user/detail"; // 리턴값 상대경로
-        } else {
-            return "erro/page1";
+        if(userEntity == null){ // userEntity가 null이면
+            return "erro/page1"; // 에러 페이지  
+        }else {
+            model.addAttribute("user", userEntity); // 데이터 있으면 모델에 담기
+            return "user/detail";
         }
-
-        // DB에 로그 남기기, 부가적인 로직
     }
 
     // 유저 수정 페이지
     // 로그인 O
     @GetMapping("/s/user/updateForm")
     public String updateForm(Model model) {
+        // 세션에서 받기, 원래는 DB에서 가져와야 함
         return "user/updateForm"; // 리턴값 상대경로
     }
 
+    // @RquestBody = BR + JSON 파싱, 자바 오브젝트일 때만
+    // @ResponseBOdy = BW + JSON 파싱, 자바 오브젝트일 때만
     // 유저수정을 수행
     // 로그인O
     @PutMapping("/s/user/{id}")
-    public String update(@PathVariable int id) {
-        return "redirect:/user/" + id;
+    public String update(@PathVariable Integer id, @RequestBody User user) { // password와 email을 오브젝트로 받음
+
+        User principal = (User) session.getAttribute("principal");
+
+        // 인증 체크하기
+        if (principal == null) {
+            return "erro/page1";
+        }
+
+        // 다른 사용자 정보를 볼 수 없도록 권한 주기
+        if (principal.getId() != id) { // 본인 id가 id와 맞지 않으면
+            return "erro/page1";
+        }
+
+        // User userEntity = userService.유저수정(id, user);
+        // session.set("principal", userEntity); 세션 변경, 덮어씌우기
+
+        return "redirect:/s/user/" + id;
     }
 
 }

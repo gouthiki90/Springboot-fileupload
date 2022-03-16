@@ -1,20 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>블로그</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</head>
-<body>
 {{>/layout/header}}
 <!--컨테이너 시작-->
 <div class="container mt-3">
     <!--회원가입 폼 시작-->
     <form action="/join" method="post">
         <div class="mb-3 mt-3">
-          <input type="text" class="form-control" placeholder="Enter username" name="username" required>
+          <input type="text" class="form-control" placeholder="Enter username" name="username" id="username" required>
         </div>
         <div class="mb-3">
           <input type="password" class="form-control" placeholder="Enter password" name="password" required>
@@ -27,6 +17,29 @@
     <!--회원가입 폼 끝-->
 </div>
 <!--컨테이너 끝-->
+
+<script>
+  async function usernameSameCheck(username){
+    let response = await fetch(`/api/user/username/same-check?username=${username}`); // 변수 바인딩
+    let responseJson = await response.json(); // json으로 응답
+
+    console.log(responseJson);
+
+    if(responseJson.data == "있어"){
+      alert("아이디를 사용할 수 없습니다.");
+
+      let prevUsername = $("#username").val().slice(0, -1); // username 값을 1 지우기
+      $("#username").val(prevUsername); // 값에 prevUsername 넣기
+    }
+  }
+
+
+  $("#username").keyup((event)=>{
+    console.log("글자 적었네?");
+    console.log(event.target.value);
+    usernameSameCheck(event.target.value);
+  });
+</script>
 
 {{>/layout/footer}}
 
