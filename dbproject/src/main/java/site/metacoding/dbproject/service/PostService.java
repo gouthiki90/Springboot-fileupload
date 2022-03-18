@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +22,7 @@ public class PostService {
 
     public Page<Post> 글목록보기(Integer page){
 
-        PageRequest pq = PageRequest.of(page, 3); // 페이지를 원래 계산해야 되는데 시작 번호를 알아서 찾아준다.
+        PageRequest pq = PageRequest.of(page, 3, Sort.by(Direction.DESC, "id")); // 페이지를 원래 계산해야 되는데 시작 번호를 알아서 찾아준다.
        
         return postRepository.findAll(pq);
     }
@@ -52,7 +54,7 @@ public class PostService {
     // }
     
     @Transactional
-    public void 글삭제하기(){
+    public void 글삭제하기(Integer id){
 
     }
 

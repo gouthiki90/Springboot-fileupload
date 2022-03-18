@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import lombok.RequiredArgsConstructor;
 import site.metacoding.dbproject.domain.post.Post;
 import site.metacoding.dbproject.domain.user.User;
 import site.metacoding.dbproject.service.PostService;
+import site.metacoding.dbproject.web.dto.ResponseDto;
 
 @RequiredArgsConstructor // final이 붙은 필드에 대한 생성자 만들어준다.
 @Controller
@@ -64,15 +66,19 @@ public class PostController {
     // Get 요청에 /post 제외 시키기, 인증이 필요없기 때문
     @GetMapping("/post/{id}") // 모든 사람이 글을 읽을 수 있도록 인증 없이 한다.
     public String detail(@PathVariable Integer id, Model model) {
-        
+        // 핵심로직
         Post postEntity = postService.글상세보기(id); // EGAER 전략이기 때문에 user 들고 있음
-        
+        // 부가로직
         if(postEntity == null){
             return "error/page1";
         }else {
             model.addAttribute("post", postEntity); // 모델에 담기
             return "post/detail";
         }
+
+        // String rawContent = postEntity.getContent(); 순수한 컨텐트를 가져옴
+        // String encContent = rawContent.replaceAll("<script>", "&lt;script&gt;").replaceAll("</script>", "&lt;script/&gt;"); 꺽쇠 막아주기
+        // postEntity.setContent(encContent); Entity 덮어씌우기
     }
 
     // 글 수정 페이지 /post/{id}/updateForm
@@ -85,8 +91,22 @@ public class PostController {
     // 글 삭제 /post
     // 인증 필요함
     @DeleteMapping("/s/post/{id}")
-    public String delete(@PathVariable Integer id) {
-        return "redirect:/";
+    public @ResponseBody ResponseDto<String> delete(@PathVariable Integer id) {
+
+        User principal = (User) session.getAttribute("principal"); // 세션 가져오기
+
+        if(principal == null){ // 로그인이 안 됐으면
+            return new ResponseDto<String>(1, "로그인이 되지 않았습니다.", null);
+        }
+
+        Post postEntity = postService.글상세보기(id); // entity의 id 찾기
+        if(principal.getId() != postEntity.getUser().getId()){ // 세션 id와 entity id 비교하기
+            return new ResponseDto<String>(-1, "해당 글을 삭제할 권한이 없습니다.", null);
+        }
+
+        postService.글삭제하기(id);
+
+        return new ResponseDto<String>(1, "성공", null);
     }
 
     // 글 수정 /post{id}
