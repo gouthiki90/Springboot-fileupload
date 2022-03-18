@@ -168,6 +168,11 @@ public class UserController {
         return "user/updateForm"; // 리턴값 상대경로
     }
 
+    // password, email만 수정하도록 한다. 
+    // password=1234&email=ssar@nate.com (x-www-form-ulencoded) MIME 타입
+    // {"password" : "1234", "email" : "ssar@nate.com"} (applicaiton/json) MIME 타입
+    // JSON을 받을 것이기 때문에 스프링이 데이터 받을 때 파싱전략을 변경해야 한다.
+    // put 요청은 http body가 있다. http header의 content type에 MIME 타입을 알려줘야 한다.
     // @RquestBody = BR + JSON 파싱, 자바 오브젝트일 때만
     // @ResponseBOdy = BW + JSON 파싱, 자바 오브젝트일 때만
     // 유저수정을 수행
@@ -187,7 +192,7 @@ public class UserController {
             return new ResponseDto<String>(-1, "권한 없음", null);
         }
 
-        // User userEntity = userService.유저수정(id, user);
+        User userEntity = userService.유저수정(id, user);
         // session.set("principal", userEntity); 세션 변경, 덮어씌우기
 
         return new ResponseDto<String>(1, "성공", null);

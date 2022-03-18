@@ -1,70 +1,67 @@
-
 {{>/layout/header}}
 <!--컨테이너 시작-->
 <div class="container mt-3">
-    <!--회원수정 폼 시작-->
-    <!-- 폼 태그는 put, delete 요청을 할 수 없다. 때문에 자바스크립트로 제어해야 한다. -->
-    <form> 
-      <input type="hidden" value="{{principal.id}}" id="id">
-        <div class="mb-3 mt-3">
-          <input type="text" class="form-control" value="{{principal.username}}" id="username" readonly>
-        </div>
-        <div class="mb-3">
-          <input type="password" class="form-control" value="{{principal.password}}" id="password" required>
-        </div>
-        <div class="mb-3 mt-3">
-            <input type="email" class="form-control" value="{{principal.email}}" id="email" required>
-          </div>
-        <button type="button" class="btn btn-dark" onclick="update()">수정완료</button>
-      </form>
-    <!--회원수정 폼 끝-->
+  <!--회원수정 폼 시작-->
+  <!-- 폼 태그는 put, delete 요청을 할 수 없다. 때문에 자바스크립트로 제어해야 한다. -->
+  <form>
+    <input type="hidden" value="{{principal.id}}" id="id">
+    <div class="mb-3 mt-3">
+      <input type="text" class="form-control" value="{{principal.username}}" id="username" readonly>
+    </div>
+    <div class="mb-3">
+      <input type="password" class="form-control" value="{{principal.password}}" id="password" required>
+    </div>
+    <div class="mb-3 mt-3">
+      <input type="email" class="form-control" value="{{principal.email}}" id="email" required>
+    </div>
+    <button type="button" class="btn btn-dark" onclick="update()">수정완료</button>
+  </form>
+  <!--회원수정 폼 끝-->
 </div>
 <!--컨테이너 끝-->
 <script>
   async function update() {
-      // 1. jquery로 password, email 찾아서 자바스크립트 오브젝트로 만들기
-      let user = { // 오브젝트 타입
-          password: $("#password").val(),
-          email: $("#email").val()
-      }
-      console.log(user);
-      // 2. 자바스크립트 오브젝트를 json으로 변환하기
-      let userJson = JSON.stringify(user);
-      //let userJson = `{ "password" : "${user.password}", "email" : "${user.email}"}`;
-      console.log(userJson);
+    // 1. jquery로 password, email 찾아서 자바스크립트 오브젝트로 만들기
+    let user = { // 오브젝트 타입
+      password: $("#password").val(),
+      email: $("#email").val()
+    }
+    console.log(user);
+    // 2. 자바스크립트 오브젝트를 json으로 변환하기
+    let userJson = JSON.stringify(user);
+    //let userJson = `{ "password" : "${user.password}", "email" : "${user.email}"}`;
+    console.log(userJson);
 
-      //let userObject = JSON.parse(userJson);
-      //console.log(userObject);
+    //let userObject = JSON.parse(userJson);
+    //console.log(userObject);
 
-      // 3. fetch 요청하기
-      let id = $("#id").val();
-      console.log(id);
+    // 3. fetch 요청하기
+    let id = $("#id").val();
+    console.log(id);
 
-      let response = await fetch("/s/user/" + id, { // 오브젝트 타입
-          method: "PUT",
-          body: userJson,
-          headers: {
-              'Content-Type': 'application/json; charset=utf-8',
-          }
-      });
-
-      let responseObject = await response.json(); // JSON을 오브젝트로 파싱
-
-      if (responseObject.code == 1) { // 오브젝트 코드에 1이 있으면
-          alert("수정에 성공하였습니다.");
-          location.href = "/s/user/" + id; // view 이동은 자바스크립트로
-      } else {
-          alert("수정에 실패 : " + responseObject.msg);
-      }
-
-      // (1) content-type 을 json으로 설정하기
+    let response = await fetch("/s/user/" + id, { // 오브젝트 타입
       // (2) put 메서드로 변경하기
+      method: "PUT",
       // (3) body 데이터 실어 보내기
+      body: userJson,
+      // (1) content-type 을 json으로 설정하기
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      }
+    });
+
+    let responseObject = await response.json(); // JSON을 오브젝트로 파싱
+    console.log(responseObject);
+
+    if (responseObject.code == 1) { // 오브젝트 코드에 1이 있으면
       // (4) ResponseDto로 응답받아서 code가 1이면 alert창으로 수정 성공 뛰우기
-      // (5) 수정 성공 메시지 이후에 / 메인 화면으로 이동하기 - location.href = "/"
+      alert("수정에 성공하였습니다.");
+      location.href = "/s/user/" + id; // view 이동은 자바스크립트로
+    } else {
+      alert("수정에 실패 : " + responseObject.msg);
+    }
+
   }
 </script>
 
 {{>/layout/footer}}
-
-

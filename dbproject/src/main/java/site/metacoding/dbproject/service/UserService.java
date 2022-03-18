@@ -53,16 +53,20 @@ public class UserService { // 레파지토리에 의존함
     }
 
     @Transactional
-    public void 유저수정(Integer id, User user){
+    public User 유저수정(Integer id, User user){
 
         //1. 영속화
-        // Optional<User> userOp = userRepository.findByid(id);
+        Optional<User> userOp = userRepository.findById(id); // 수정하기 위해서 id 찾기
 
-        // if(userOp.isPresent){
-            // User userEntity = userOp.get();
-            // userEntity
-            // userEntity.setEmail(user.getEmail());
-        // }
-        // return userEntity; 엔티티를 돌려주면서 세션 변경
+        if(userOp.isPresent()){ // 유저가 있을 때
+            User userEntity = userOp.get(); // userEntity에 오브젝트 넣기
+            userEntity.setPassword(user.getPassword()); // password update하기
+            userEntity.setEmail(user.getEmail());
+
+            return userEntity; // 엔티티를 돌려주면서 세션 변경
+        }
+        
+        return null;
+         
     } // 2. 트랜잭션 종료 + 영속화 되어있는 것들 전부 더티체킹(변경감지해서 디비에 flush)함, update가 된다.
 }
