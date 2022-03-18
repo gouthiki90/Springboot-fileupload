@@ -104,7 +104,7 @@ public class PostController {
             return new ResponseDto<String>(-1, "해당 글을 삭제할 권한이 없습니다.", null);
         }
 
-        postService.글삭제하기(id);
+        postService.글삭제하기(id); // 내부적으로 예외가 터지면 무조건 스택 트레이스를 리턴한다.
 
         return new ResponseDto<String>(1, "성공", null);
     }

@@ -55,6 +55,7 @@ public class PostService {
     
     @Transactional
     public void 글삭제하기(Integer id){
+        postRepository.deleteById(id); // void이기 때문에 실패했을 때 내부적으로 예외가 터짐
 
     }
 
