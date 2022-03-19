@@ -88,6 +88,11 @@ public class PostController {
             }
         }
 
+        String rawContent = postEntity.getContent();
+        String encContent = rawContent.replaceAll("<", "&lt;").replaceAll(">", "&gt;"); // 태그를 치환 코드로 바꾼다.
+
+        postEntity.setContent(encContent); // replace된 content를 덮어씌우기
+
         model.addAttribute("post", postEntity); // 모델에 담기
         return "post/detail";
 
