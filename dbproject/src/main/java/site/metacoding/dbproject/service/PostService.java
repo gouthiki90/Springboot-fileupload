@@ -43,10 +43,17 @@ public class PostService {
     }
 
     @Transactional
-    public void 글수정하기(){ // wirte이기 때문에 트랜잭션이다.
+    public void 글수정하기(Post post, Integer id){ // wirte이기 때문에 트랜잭션이다.
         // 스택이 끝날 때 커밋된다. 더티체킹이 되는 셈.
+        Optional<Post> postOp = postRepository.findById(id); // postEntity 불러오기
+        // 영속화
 
-    }
+        if(postOp.isPresent()){ // 포스트가 있으면
+            Post postEntity = postOp.get(); // 얻기
+            postEntity.setTitle(post.getTitle()); // 타이틀 수정하기
+            postEntity.setContent(post.getContent()); // 내용 수정하기
+        }
+    } // 영속화 후 더티체킹 완료(수정됨)
     
     // SELECT해서 가야하기 때문에, 글 상세보기를 재사용하면 된다.
     // public void 글수정페이지가기(){

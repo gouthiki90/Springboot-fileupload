@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -90,17 +91,29 @@ public class PostController {
         model.addAttribute("post", postEntity); // 모델에 담기
         return "post/detail";
 
-        // String rawContent = postEntity.getContent(); 순수한 컨텐트를 가져옴
-        // String encContent = rawContent.replaceAll("<script>",
-        // "&lt;script&gt;").replaceAll("</script>", "&lt;script/&gt;"); 꺽쇠 막아주기
-        // postEntity.setContent(encContent); Entity 덮어씌우기
     }
 
     // 글 수정 페이지 /post/{id}/updateForm
     // 인증 반드시 필요함
     @GetMapping("/s/post/{id}/updateForm")
-    public String updateForm(@PathVariable Integer id) {
-        return "post/{id}/updateForm"; // viewResolver 도움을 받는다.
+    public String updateForm(@PathVariable Integer id, Model model) {
+
+        // 인증
+        User principal = (User) session.getAttribute("principal");
+
+        if (principal == null) {
+            return "error/page1";
+        }
+
+        // 권한
+        Post postEntity = postService.글상세보기(id); // 핵심로직
+
+        if (postEntity.getUser().getId() != principal.getId()) {
+            return "error/page1";
+        }
+
+        model.addAttribute("post", postEntity);
+        return "post/updateForm"; // viewResolver 도움을 받는다.
     }
 
     // 글 삭제 /post
@@ -127,8 +140,25 @@ public class PostController {
     // 글 수정 /post{id}
     // 인증 필요함
     @PutMapping("/s/post/{id}")
-    public String update(@PathVariable Integer id) {
-        return "redirect:post/" + id; // 글 상세보기
+    public @ResponseBody ResponseDto<String> update(@PathVariable Integer id, @RequestBody Post post) { // JSON 데이터 받기
+
+        // 인증
+        User principal = (User) session.getAttribute("principal");
+
+        if (principal == null) {
+            return new ResponseDto<String>(-1, "로그인되지 않았습니다.", null);
+        }
+
+        // 권한
+        Post postEntity = postService.글상세보기(id); // 핵심로직
+
+        if (postEntity.getUser().getId() != principal.getId()) {
+            return new ResponseDto<String>(-1, "해당 게시글을 수정할 권한이 없습니다.", null);
+        }
+
+        postService.글수정하기(post, id);
+
+        return new ResponseDto<String>(1, "수정 성공", null);
     }
 
     // 글 쓰기 /post
